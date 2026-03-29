@@ -1,0 +1,119 @@
+package github.com.antongusev.facialprocessing.presentation
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import github.com.antongusev.facialprocessing.presentation.theme.FacialProcessingTheme
+import github.com.antongusev.facialprocessing.presentation.screens.Screen
+import github.com.antongusev.facialprocessing.presentation.screens.clusters.ClustersScreen
+import github.com.antongusev.facialprocessing.presentation.screens.clusters.ClustersViewModel
+import github.com.antongusev.facialprocessing.presentation.screens.details.DetailsScreen
+import github.com.antongusev.facialprocessing.presentation.screens.details.DetailsViewModel
+import github.com.antongusev.facialprocessing.presentation.screens.feed.FeedScreen
+import github.com.antongusev.facialprocessing.presentation.screens.feed.FeedViewModel
+import github.com.antongusev.facialprocessing.presentation.screens.search.SearchScreen
+import github.com.antongusev.facialprocessing.presentation.screens.search.SearchViewModel
+import org.koin.androidx.compose.koinViewModel
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            FacialProcessingTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    AppNavHost(
+                        startDestination = Screen.Feed.route,
+                        navController = rememberNavController()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AppNavHost(
+    startDestination: String,
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+) {
+    NavHost(
+        startDestination = startDestination,
+        navController = navController,
+        modifier = modifier
+    ) {
+        composable(Screen.Feed.route) {
+            val viewModel = koinViewModel<FeedViewModel>()
+
+            FeedScreen(
+                viewModel = viewModel,
+                navController = navController,
+                modifier = modifier
+            )
+        }
+
+        composable(
+            route = Screen.Details.route,
+            arguments = listOf(
+                navArgument(Screen.Details.MEDIA_ID) { type = NavType.LongType },
+                navArgument(Screen.Details.CLUSTER_ID) { type = NavType.IntType },
+            )
+        ) { backStackEntry ->
+            val mediaId = backStackEntry.arguments?.getLong(Screen.Details.MEDIA_ID) ?: -1
+            val clusterId = backStackEntry.arguments?.getInt(Screen.Details.CLUSTER_ID) ?: -1
+
+            val viewModel = koinViewModel<DetailsViewModel>()
+
+            DetailsScreen(
+                mediaId = mediaId,
+                clusterId = if (clusterId == Screen.Details.CLUSTER_NULL) { null } else {  clusterId },
+                viewModel = viewModel,
+                navController = navController,
+                modifier = modifier
+            )
+        }
+
+        composable(
+            route = Screen.Search.route,
+            arguments = listOf(
+                navArgument(Screen.Search.QUERY) { type = NavType.StringType },
+            )
+        ) { backStackEntry ->
+            val query = backStackEntry.arguments?.getString(Screen.Search.QUERY) ?: ""
+
+            val viewModel = koinViewModel<SearchViewModel>()
+
+            SearchScreen(
+                clusterId = Screen.Search.getPersonId(query),
+                searchAttributeIds = Screen.Search.getAttributes(query),
+                viewModel = viewModel,
+                navController = navController,
+                modifier = modifier
+            )
+        }
+
+        composable(route = Screen.Clusters.route) {
+            val viewModel = koinViewModel<ClustersViewModel>()
+
+            ClustersScreen(
+                viewModel = viewModel,
+                navController = navController,
+                modifier = modifier
+            )
+        }
+    }
+}

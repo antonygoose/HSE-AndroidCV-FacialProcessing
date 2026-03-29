@@ -1,0 +1,46 @@
+package github.com.antongusev.facialprocessing.presentation.screens.feed
+
+import github.com.antongusev.facialprocessing.interactors.models.FaceCluster
+import github.com.antongusev.facialprocessing.interactors.models.FaceSearchAttribute
+import github.com.antongusev.facialprocessing.interactors.models.MediaEntry
+
+data class FeedUiState(
+    val status: Status,
+    val photosToProcessCount: Int,
+    val processingProgress: Float,
+    val imagesWithFaces: List<MediaEntry>,
+    val searchAttributes: Set<FaceSearchAttribute.Type>,
+    val faceClusters: List<FaceCluster>,
+) {
+    enum class Status {
+        PREPARING_TO_PROCESSING,
+        PROCESSING_IMAGES,
+        CLUSTERING,
+        LOADING_DATA,
+        READY,
+        EMPTY,
+    }
+
+    companion object {
+        val EMPTY = FeedUiState(
+            status = Status.LOADING_DATA,
+            photosToProcessCount = 0,
+            processingProgress = 0f,
+            imagesWithFaces = emptyList(),
+            searchAttributes = emptySet(),
+            faceClusters = emptyList(),
+        )
+    }
+}
+
+val FeedUiState.Status.canShowScanButton: Boolean
+    get() {
+        return when(this) {
+            FeedUiState.Status.PREPARING_TO_PROCESSING -> false
+            FeedUiState.Status.PROCESSING_IMAGES -> false
+            FeedUiState.Status.CLUSTERING -> false
+            FeedUiState.Status.LOADING_DATA -> false
+            FeedUiState.Status.READY -> true
+            FeedUiState.Status.EMPTY -> true
+        }
+    }
